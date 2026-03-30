@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Where Does the Light Actually Reach? — Electricity Survey, Pune</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,700&family=Cabinet+Grotesk:wght@400;500;700;800&family=Instrument+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ── TOKENS ── */
+:root{
+  --ink:#0A2A1A; --soft:#2E5040; --muted:#5A7868;
+  --bg:#EDF7F1; --card:#FFFFFF; --border:#C6E8D2;
+  --gold:#F59E0B; --red:#EF4444; --teal:#0D9488;
+  --blue:#3B82F6; --purple:#8B5CF6; --green:#10B981;
+  --r:18px;
+  --s1:0 1px 4px rgba(10,42,26,.04),0 8px 28px rgba(10,42,26,.07);
+  --s2:0 4px 16px rgba(10,42,26,.08),0 24px 56px rgba(10,42,26,.14);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+/* ── PAGE BG TEXTURE ── */
+body::before{content:'';position:fixed;inset:0;z-index:-2;
+  background:linear-gradient(145deg,#EDF7F1 0%,#D8F0E3 35%,#EBF8F1 70%,#D4EEE0 100%)}
+body::after{content:'';position:fixed;inset:0;z-index:-1;opacity:.35;
+  background-image:radial-gradient(circle at 20% 20%,rgba(16,185,129,.07) 0%,transparent 50%),
+  radial-gradient(circle at 80% 80%,rgba(245,158,11,.06) 0%,transparent 50%),
+  radial-gradient(circle at 60% 10%,rgba(59,130,246,.04) 0%,transparent 40%)}
+
+/* ── LANG BAR ── */
+.lang-bar{background:#0A2A1A;padding:7px 40px;display:flex;align-items:center;justify-content:flex-end;gap:8px}
+.lang-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.65);font-family:'Instrument Sans',sans-serif;font-size:11.5px;font-weight:500;padding:4px 14px;border-radius:100px;cursor:pointer;transition:.2s}
+.lang-btn.active,.lang-btn:hover{background:var(--gold);border-color:var(--gold);color:#000}
+.lang-label{font-size:10px;color:rgba(255,255,255,.3);letter-spacing:.1em;text-transform:uppercase;margin-right:4px}
+
+/* ── NAV ── */
+.nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 44px}
+.nav-logo{font-family:'Cabinet Grotesk',sans-serif;font-weight:800;font-size:18px;display:flex;align-items:center;gap:10px;color:#0A2A1A;letter-spacing:-.03em;text-decoration:none}
+.nav-logo-icon{width:33px;height:33px;background:linear-gradient(135deg,#F59E0B,#f97316);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 3px 12px rgba(245,158,11,.4)}
+.nav-links{display:flex;gap:2px}
+.nav-links a{font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;padding:6px 13px;border-radius:8px;transition:.2s}
+.nav-links a:hover{background:#D8F0E3;color:var(--ink)}
+
+/* ── HERO ── */
+.hero{background:linear-gradient(140deg,#062014 0%,#0A2A1A 45%,#0d3322 100%);padding:80px 48px 72px;position:relative;overflow:hidden;min-height:520px;display:flex;align-items:center}
+.hero-bg-lines{position:absolute;inset:0;opacity:.06;background-image:linear-gradient(rgba(255,255,255,.5) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.5) 1px,transparent 1px);background-size:60px 60px}
+.hero-orb1{position:absolute;right:-80px;top:-80px;width:500px;height:500px;background:radial-gradient(circle,rgba(245,158,11,.2) 0%,transparent 65%);pointer-events:none}
+.hero-orb2{position:absolute;left:30%;bottom:-60px;width:320px;height:320px;background:radial-gradient(circle,rgba(16,185,129,.15) 0%,transparent 65%);pointer-events:none}
+.hero-orb3{position:absolute;left:-40px;top:40%;width:220px;height:220px;background:radial-gradient(circle,rgba(59,130,246,.1) 0%,transparent 65%);pointer-events:none}
+.hero-inner{max-width:1200px;margin:0 auto;width:100%;position:relative;display:grid;grid-template-columns:1fr 320px;gap:60px;align-items:center}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:var(--gold);font-size:10.5px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;padding:6px 16px;border-radius:100px;margin-bottom:24px}
+.hero-dot{width:6px;height:6px;background:var(--gold);border-radius:50%;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.25;transform:scale(1.6)}}
+.hero h1{font-family:'Fraunces',serif;font-size:clamp(40px,5.2vw,66px);color:#fff;line-height:1.02;letter-spacing:-.02em;margin-bottom:20px;font-weight:900}
+.hero h1 .acc{color:var(--gold);font-style:italic}
+.hero h1 .acc2{color:#5eead4}
+.hero-desc{font-size:15px;color:rgba(255,255,255,.48);font-weight:300;line-height:1.85;max-width:500px;margin-bottom:36px}
+.hero-pills{display:flex;flex-wrap:wrap;gap:10px}
+.pill{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.72);font-size:12.5px;padding:8px 16px;border-radius:100px}
+.pill b{color:#fff;font-weight:600}
+
+/* Hero right — big animated ring */
+.hero-ring-wrap{position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ring-outer{animation:spin 22s linear infinite}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.ring-center{position:absolute;text-align:center}
+.ring-num{font-family:'Fraunces',serif;font-size:52px;font-weight:900;color:#fff;line-height:1}
+.ring-lbl{font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.12em;margin-top:4px}
+.ring-stats{display:flex;gap:28px;margin-top:16px;justify-content:center}
+.rs{text-align:center}
+.rs-n{font-family:'Fraunces',serif;font-size:22px;font-weight:900;color:var(--gold);line-height:1}
+.rs-l{font-size:9px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.1em;margin-top:3px}
+
+/* ── MAIN ── */
+.main{max-width:1200px;margin:0 auto;padding:56px 24px 88px}
+.sh{display:flex;align-items:center;gap:14px;margin-bottom:26px;margin-top:60px}
+.sh:first-child{margin-top:0}
+.sh h2{font-family:'Fraunces',serif;font-size:27px;font-weight:700;letter-spacing:-.01em}
+.sh-tag{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:rgba(255,255,255,.7);border:1px solid var(--border);padding:4px 11px;border-radius:100px}
+
+/* ── OVERVIEW — short stat row ── */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+@media(max-width:800px){.stat-row{grid-template-columns:repeat(2,1fr)}}
+.scard{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:28px 22px 24px;box-shadow:var(--s1);transition:.3s;position:relative;overflow:hidden;text-align:center}
+.scard:hover{box-shadow:var(--s2);transform:translateY(-4px)}
+.scard::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+.sc-a::before{background:linear-gradient(90deg,#F59E0B,#f97316)}
+.sc-b::before{background:linear-gradient(90deg,#10B981,#0D9488)}
+.sc-c::before{background:linear-gradient(90deg,#3B82F6,#6366F1)}
+.sc-d::before{background:linear-gradient(90deg,#EF4444,#F97316)}
+.scard-ico{font-size:28px;margin-bottom:12px;display:block}
+.scard-num{font-family:'Fraunces',serif;font-size:46px;font-weight:900;line-height:1;letter-spacing:-.03em;margin-bottom:4px}
+.sc-a .scard-num{color:#D97706}
+.sc-b .scard-num{color:#059669}
+.sc-c .scard-num{color:#2563EB}
+.sc-d .scard-num{color:#DC2626}
+.scard-lbl{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:12px}
+.scard-sub{font-size:11px;font-weight:600;padding:3px 10px;border-radius:100px;display:inline-block}
+
+/* ── INFOGRAPHIC STRIP ── */
+.infobanner{background:linear-gradient(135deg,#062014 0%,#0A2A1A 50%,#0d3322 100%);border-radius:var(--r);display:grid;grid-template-columns:1fr 1fr;overflow:hidden}
+.ib-l{padding:48px 48px 48px 52px}
+.ib-l h3{font-family:'Fraunces',serif;font-size:32px;font-weight:900;color:#fff;line-height:1.1;margin-bottom:14px}
+.ib-l h3 em{color:var(--gold);font-style:italic}
+.ib-l p{font-size:13px;color:rgba(255,255,255,.45);line-height:1.85;margin-bottom:32px;max-width:380px}
+.ib-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.ibn{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:18px 14px;text-align:center}
+.ibn-n{font-family:'Fraunces',serif;font-size:36px;font-weight:900;line-height:1}
+.ibn-l{font-size:10px;color:rgba(255,255,255,.4);margin-top:5px;text-transform:uppercase;letter-spacing:.07em;line-height:1.4}
+.ib-r{display:flex;align-items:center;justify-content:center;padding:40px;position:relative;overflow:hidden}
+.ib-r::before{content:'';position:absolute;right:-40px;top:-40px;width:240px;height:240px;background:radial-gradient(circle,rgba(16,185,129,.2) 0%,transparent 65%)}
+
+/* ── INFOGRAPHIC CARDS ── */
+.ig-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+@media(max-width:900px){.ig-row{grid-template-columns:repeat(2,1fr)}}
+.igc{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:30px 22px 26px;text-align:center;box-shadow:var(--s1);transition:.3s;position:relative;overflow:hidden}
+.igc:hover{box-shadow:var(--s2);transform:translateY(-4px)}
+.igc-top{position:absolute;top:0;left:0;right:0;height:5px;border-radius:var(--r) var(--r) 0 0}
+.igc-ico{font-size:46px;margin-bottom:14px;display:block;line-height:1}
+.igc h4{font-family:'Cabinet Grotesk',sans-serif;font-size:15px;font-weight:700;margin-bottom:8px;color:var(--ink)}
+.igc p{font-size:12px;color:var(--muted);line-height:1.65}
+.igc-badge{display:inline-block;margin-top:14px;font-size:11px;font-weight:700;padding:4px 13px;border-radius:100px}
+
+/* ── VISUAL DIVIDER INFOGRAPHIC ── */
+.vis-infographic{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:40px;box-shadow:var(--s1);overflow:hidden;position:relative}
+.vis-infographic::before{content:'';position:absolute;right:-60px;bottom:-60px;width:300px;height:300px;background:radial-gradient(circle,rgba(16,185,129,.08) 0%,transparent 65%)}
+
+/* ── MAP ── */
+.map-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--s1)}
+.map-hd{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.map-hd h3{font-family:'Cabinet Grotesk',sans-serif;font-size:16px;font-weight:700}
+.map-hd p{font-size:12px;color:var(--muted);margin-top:2px}
+.map-leg{display:flex;gap:16px;flex-wrap:wrap}
+.mleg{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--soft)}
+.mleg-d{width:11px;height:11px;border-radius:50%}
+#leafmap{height:460px}
+
+/* ── CHARTS ── */
+.charts2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:680px){.charts2{grid-template-columns:1fr}}
+.cc{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:30px;box-shadow:var(--s1);transition:.3s}
+.cc:hover{box-shadow:var(--s2);transform:translateY(-3px)}
+.cc h3{font-family:'Cabinet Grotesk',sans-serif;font-size:16px;font-weight:700;margin-bottom:4px}
+.cc .sub{font-size:12px;color:var(--muted);margin-bottom:24px}
+.cw{position:relative;height:230px}
+.cleg{display:flex;flex-direction:column;gap:10px;margin-top:20px}
+.cr{display:flex;align-items:center;justify-content:space-between}
+.cl{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--soft)}
+.cd{width:13px;height:13px;border-radius:4px;flex-shrink:0}
+.cv{font-size:13px;font-weight:700;color:var(--ink)}
+
+/* ── SDG ── */
+.sdg-intro-band{background:linear-gradient(135deg,#062014 0%,#0A2A1A 55%,#0d3322 100%);border-radius:var(--r);padding:42px 48px;margin-bottom:26px;position:relative;overflow:hidden}
+.sdg-intro-band::after{content:'SDG';position:absolute;right:28px;top:50%;transform:translateY(-50%);font-family:'Fraunces',serif;font-size:110px;font-weight:900;color:rgba(255,255,255,.025);line-height:1;pointer-events:none}
+.sdg-intro-band h3{font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#fff;margin-bottom:10px}
+.sdg-intro-band p{font-size:13px;color:rgba(255,255,255,.45);line-height:1.8;max-width:640px}
+.sdg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+@media(max-width:860px){.sdg-grid{grid-template-columns:1fr}}
+.sdg-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--s1);transition:.3s}
+.sdg-card:hover{box-shadow:var(--s2);transform:translateY(-4px)}
+.sdg-top{padding:22px 22px 16px;display:flex;align-items:flex-start;gap:14px}
+.sdg-logo{width:60px;height:60px;border-radius:12px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;line-height:1}
+.sdg-logo .sn{font-size:10px;font-weight:700;letter-spacing:.04em}
+.sdg-logo .sg{font-size:28px;font-weight:900;font-family:'Fraunces',serif;line-height:1}
+.sdg-meta .gn{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
+.sdg-meta h4{font-size:15px;font-weight:700;font-family:'Cabinet Grotesk',sans-serif;margin-bottom:6px}
+.sdg-meta p{font-size:12px;color:var(--muted);line-height:1.65}
+.sdg-vis{margin:0 22px 20px;border-radius:12px;height:140px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px}
+.sdg-vis-icon{font-size:54px;line-height:1}
+.sdg-vis-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;opacity:.75}
+.sdg-tags{padding:0 22px 16px;display:flex;flex-wrap:wrap;gap:7px}
+.sdg-t{font-size:11px;font-weight:500;padding:4px 11px;border-radius:100px}
+.sdg-links{padding:0 22px 22px;display:flex;gap:8px;flex-wrap:wrap}
+.sdg-lnk{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:500;padding:8px 13px;border-radius:9px;text-decoration:none;border:1px solid var(--border);color:var(--soft);transition:.2s}
+.sdg-lnk:hover{background:var(--bg)}
+.sdg-lnk-vid{font-weight:700;color:#fff!important;border:none!important}
+.sdg-lnk-vid:hover{opacity:.88}
+
+/* ── RECS ── */
+.rec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px}
+.rec-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:26px 24px;box-shadow:var(--s1);transition:.3s;display:flex;gap:18px;align-items:flex-start}
+.rec-card:hover{box-shadow:var(--s2);transform:translateY(-3px)}
+.rec-ico{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.rec-body h4{font-family:'Cabinet Grotesk',sans-serif;font-size:15px;font-weight:700;margin-bottom:7px}
+.rec-body p{font-size:12.5px;color:var(--muted);line-height:1.7}
+.rec-pri{display:inline-block;margin-top:12px;font-size:10px;font-weight:700;padding:4px 10px;border-radius:100px;letter-spacing:.05em}
+
+/* ── FOOTER ── */
+.footer{background:linear-gradient(135deg,#062014,#0A2A1A);color:rgba(255,255,255,.35);text-align:center;padding:40px 24px;font-size:12px;line-height:2}
+.footer b{color:rgba(255,255,255,.7)}
+.footer-sdg-strip{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:18px;flex-wrap:wrap}
+.footer-sdg-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:100px;font-size:11px;font-weight:600;color:#fff}
+
+/* ── LIGHTBOX ── */
+.lb{display:none;position:fixed;inset:0;z-index:999;background:rgba(4,14,9,.95);backdrop-filter:blur(14px);align-items:center;justify-content:center;flex-direction:column}
+.lb.on{display:flex}
+.lb img{max-width:88vw;max-height:76vh;border-radius:14px;box-shadow:0 40px 100px rgba(0,0,0,.6)}
+.lb-x{position:absolute;top:22px;right:28px;color:#fff;font-size:26px;cursor:pointer;background:none;border:none;opacity:.55;transition:.2s}
+.lb-x:hover{opacity:1}
+.lb-cap{color:rgba(255,255,255,.45);font-size:13px;margin-top:16px}
+
+/* ── SCROLL ANIM ── */
+.fadein{opacity:0;transform:translateY(24px);transition:opacity .65s ease,transform .65s ease}
+.fadein.vis{opacity:1;transform:translateY(0)}
+.fadein2{opacity:0;transform:translateY(20px);transition:opacity .65s ease .12s,transform .65s ease .12s}
+.fadein2.vis{opacity:1;transform:translateY(0)}
+.fadein3{opacity:0;transform:translateY(20px);transition:opacity .65s ease .24s,transform .65s ease .24s}
+.fadein3.vis{opacity:1;transform:translateY(0)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:960px){
+  .hero-inner{grid-template-columns:1fr}
+  .hero-ring-wrap{display:none}
+  .infobanner{grid-template-columns:1fr}
+  .ib-r{display:none}
+}
+@media(max-width:680px){
+  .hero{padding:52px 24px 48px}
+  .main{padding:36px 16px 64px}
+  .nav{padding:0 20px}
+  .nav-links{display:none}
+  .lang-bar{padding:7px 20px}
+  .sdg-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- LANG BAR -->
+<div class="lang-bar">
+  <span class="lang-label">Language</span>
+  <button class="lang-btn active" onclick="setLang('en')">🇬🇧 English</button>
+  <button class="lang-btn" onclick="setLang('hi')">🇮🇳 हिन्दी</button>
+  <button class="lang-btn" onclick="setLang('mr')">🟠 मराठी</button>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a class="nav-logo" href="#"><div class="nav-logo-icon">⚡</div>PowerPulse</a>
+  <div class="nav-links">
+    <a href="#overview">Overview</a>
+    <a href="#insights">Insights</a>
+    <a href="#map">Map</a>
+    <a href="#charts">Charts</a>
+    <a href="#sdgs">SDGs</a>
+    <a href="#recommendations">Recommendations</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg-lines"></div>
+  <div class="hero-orb1"></div><div class="hero-orb2"></div><div class="hero-orb3"></div>
+  <div class="hero-inner">
+    <div>
+      <div class="hero-eyebrow"><span class="hero-dot"></span> Field Survey · Pune, Maharashtra</div>
+      <h1>Where Does the<br><span class="acc">Light</span> Actually<br><span class="acc2">Reach?</span></h1>
+      <p class="hero-desc">A ground-level investigation into electricity access, power reliability, and public infrastructure across 25 surveyed locations in Pune — turning real field data into clear, visual answers.</p>
+      <div class="hero-pills">
+        <span class="pill">📍 <b>Pune, Maharashtra</b></span>
+        <span class="pill">👤 Surveyor: <b>Bhakti</b></span>
+        <span class="pill">🗺️ <b>25</b> Survey Points</span>
+        <span class="pill">📱 <b>Epicollect5</b></span>
+        <span class="pill">🌐 UTM Zone <b>43Q</b></span>
+      </div>
+    </div>
+    <div class="hero-ring-wrap">
+      <svg class="ring-outer" width="240" height="240" viewBox="0 0 240 240">
+        <!-- Background circles -->
+        <circle cx="120" cy="120" r="108" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+        <circle cx="120" cy="120" r="88" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+        <!-- Frequent arc: 10/25 = 144° -->
+        <circle cx="120" cy="120" r="108" fill="none" stroke="#EF4444" stroke-width="11"
+          stroke-dasharray="144 535" stroke-dashoffset="0"
+          stroke-linecap="round" transform="rotate(-90 120 120)" opacity=".9"/>
+        <!-- Rarely arc: 10/25 = 144°, starts after frequent -->
+        <circle cx="120" cy="120" r="108" fill="none" stroke="#10B981" stroke-width="11"
+          stroke-dasharray="144 535" stroke-dashoffset="-148"
+          stroke-linecap="round" transform="rotate(-90 120 120)" opacity=".9"/>
+        <!-- Generator dots around ring -->
+        <circle cx="120" cy="12" r="5" fill="#F59E0B"/>
+        <circle cx="228" cy="120" r="5" fill="#F59E0B"/>
+        <circle cx="68" cy="218" r="5" fill="#10B981"/>
+        <circle cx="172" cy="218" r="5" fill="#EF4444"/>
+      </svg>
+      <div class="ring-center">
+        <div class="ring-num">25</div>
+        <div class="ring-lbl">Survey Pts</div>
+        <div class="ring-stats">
+          <div class="rs"><div class="rs-n" style="color:#EF4444">10</div><div class="rs-l">Frequent</div></div>
+          <div class="rs"><div class="rs-n" style="color:#10B981">10</div><div class="rs-l">Rarely</div></div>
+          <div class="rs"><div class="rs-n" style="color:#F59E0B">8</div><div class="rs-l">Generator</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="main">
+
+<!-- ── OVERVIEW ── -->
+<div id="overview" class="sh fadein"><h2>Survey at a Glance</h2><span class="sh-tag">Overview</span></div>
+<div class="stat-row">
+  <div class="scard sc-a fadein">
+    <span class="scard-ico">📋</span>
+    <div class="scard-num" id="cnt1">0</div>
+    <div class="scard-lbl">Survey Points Collected</div>
+    <span class="scard-sub" style="background:#FEF3C7;color:#92400E">Via Epicollect5</span>
+  </div>
+  <div class="scard sc-b fadein2">
+    <span class="scard-ico">😊</span>
+    <div class="scard-num" id="cnt2">0%</div>
+    <div class="scard-lbl">Respondents Satisfied</div>
+    <span class="scard-sub" style="background:#D1FAE5;color:#065F46">18 of 25 happy</span>
+  </div>
+  <div class="scard sc-c fadein3">
+    <span class="scard-ico">💡</span>
+    <div class="scard-num" id="cnt3">0%</div>
+    <div class="scard-lbl">Streetlights Working</div>
+    <span class="scard-sub" style="background:#EFF6FF;color:#1E40AF">21 of 25 lit</span>
+  </div>
+  <div class="scard sc-d fadein">
+    <span class="scard-ico">🔋</span>
+    <div class="scard-num" id="cnt4">0</div>
+    <div class="scard-lbl">Use Generator Backup</div>
+    <span class="scard-sub" style="background:#FEE2E2;color:#991B1B">32% have backup</span>
+  </div>
+</div>
+
+<!-- ── INFOGRAPHIC BAND ── -->
+<div class="infobanner fadein" style="margin-top:56px">
+  <div class="ib-l">
+    <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25);color:var(--gold);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:5px 13px;border-radius:100px;margin-bottom:18px">⚡ Power Reliability Breakdown</div>
+    <h3>10 Frequent · 10 Rarely<br><em>· 5 Unpredictable</em></h3>
+    <p>10 locations experience frequent power outages, 10 rarely face cuts, and 5 unique points report both — meaning outages are unpredictable there. All 25 connect to the Government Grid; 8 locations also use a generator as backup, both private and government-supplied.</p>
+    <div class="ib-nums">
+      <div class="ibn"><div class="ibn-n" style="color:#EF4444">10</div><div class="ibn-l">Frequent<br>Outages</div></div>
+      <div class="ibn"><div class="ibn-n" style="color:#10B981">10</div><div class="ibn-l">Rare<br>Outages</div></div>
+      <div class="ibn"><div class="ibn-n" style="color:#F59E0B">8</div><div class="ibn-l">Use<br>Generator</div></div>
+    </div>
+  </div>
+  <div class="ib-r">
+    <!-- Inline SVG Power Network Infographic -->
+    <svg viewBox="0 0 300 280" width="300" height="280" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="150" cy="140" r="120" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="1.5"/>
+      <circle cx="150" cy="140" r="92" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+      <!-- center hub -->
+      <circle cx="150" cy="140" r="44" fill="rgba(245,158,11,.15)" stroke="rgba(245,158,11,.4)" stroke-width="2"/>
+      <text x="150" y="135" text-anchor="middle" font-size="26" fill="#F59E0B">⚡</text>
+      <text x="150" y="154" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.5)" font-family="Instrument Sans,sans-serif" font-weight="500">GRID</text>
+      <!-- 5 Frequent nodes -->
+      <line x1="150" y1="96" x2="150" y2="38" stroke="rgba(239,68,68,.35)" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <circle cx="150" cy="26" r="20" fill="#EF4444" opacity=".92"/>
+      <text x="150" y="30" text-anchor="middle" font-size="8" fill="#fff" font-weight="700" font-family="Instrument Sans,sans-serif">FREQ</text>
+      <line x1="192" y1="112" x2="234" y2="68" stroke="rgba(239,68,68,.35)" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <circle cx="245" cy="57" r="18" fill="#EF4444" opacity=".85"/>
+      <text x="245" y="62" text-anchor="middle" font-size="8" fill="#fff" font-weight="700" font-family="Instrument Sans,sans-serif">FREQ</text>
+      <line x1="194" y1="168" x2="236" y2="212" stroke="rgba(239,68,68,.35)" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <circle cx="247" cy="223" r="18" fill="#EF4444" opacity=".85"/>
+      <text x="247" y="228" text-anchor="middle" font-size="8" fill="#fff" font-weight="700" font-family="Instrument Sans,sans-serif">FREQ</text>
+      <line x1="108" y1="112" x2="66" y2="68" stroke="rgba(239,68,68,.35)" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <circle cx="55" cy="57" r="18" fill="#EF4444" opacity=".85"/>
+      <text x="55" y="62" text-anchor="middle" font-size="8" fill="#fff" font-weight="700" font-family="Instrument Sans,sans-serif">FREQ</text>
+      <line x1="106" y1="168" x2="64" y2="212" stroke="rgba(239,68,68,.35)" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <circle cx="53" cy="223" r="18" fill="#EF4444" opacity=".85"/>
+      <text x="53" y="228" text-anchor="middle" font-size="8" fill="#fff" font-weight="700" font-family="Instrument Sans,sans-serif">FREQ</text>
+      <!-- 5 Rarely nodes -->
+      <line x1="194" y1="140" x2="248" y2="140" stroke="rgba(16,185,129,.35)" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <circle cx="260" cy="140" r="16" fill="#10B981" opacity=".9"/>
+      <text x="260" y="145" text-anchor="middle" font-size="7.5" fill="#fff" font-weight="700" font-family="Instrument Sans,sans-serif">RARE</text>
+      <line x1="106" y1="140" x2="52" y2="140" stroke="rgba(16,185,129,.35)" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <circle cx="40" cy="140" r="16" fill="#10B981" opacity=".9"/>
+      <text x="40" y="145" text-anchor="middle" font-size="7.5" fill="#fff" font-weight="700" font-family="Instrument Sans,sans-serif">RARE</text>
+      <line x1="150" y1="184" x2="150" y2="238" stroke="rgba(16,185,129,.35)" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <circle cx="150" cy="252" r="16" fill="#10B981" opacity=".9"/>
+      <text x="150" y="257" text-anchor="middle" font-size="7.5" fill="#fff" font-weight="700" font-family="Instrument Sans,sans-serif">RARE</text>
+      <!-- Generator nodes -->
+      <circle cx="188" cy="248" r="13" fill="#F59E0B" opacity=".9"/>
+      <text x="188" y="253" text-anchor="middle" font-size="7" fill="#000" font-weight="700" font-family="Instrument Sans,sans-serif">GEN</text>
+      <circle cx="112" cy="248" r="13" fill="#F59E0B" opacity=".9"/>
+      <text x="112" y="253" text-anchor="middle" font-size="7" fill="#000" font-weight="700" font-family="Instrument Sans,sans-serif">GEN</text>
+      <!-- Legend -->
+      <rect x="10" y="268" width="9" height="9" rx="2" fill="#EF4444"/>
+      <text x="22" y="276" font-size="9" fill="rgba(255,255,255,.45)" font-family="Instrument Sans,sans-serif">Frequent (10)</text>
+      <rect x="115" y="268" width="9" height="9" rx="2" fill="#10B981"/>
+      <text x="127" y="276" font-size="9" fill="rgba(255,255,255,.45)" font-family="Instrument Sans,sans-serif">Rarely (10)</text>
+      <rect x="220" y="268" width="9" height="9" rx="2" fill="#F59E0B"/>
+      <text x="232" y="276" font-size="9" fill="rgba(255,255,255,.45)" font-family="Instrument Sans,sans-serif">Gen (8)</text>
+    </svg>
+  </div>
+</div>
+
+<!-- ── FIELD INSIGHTS ── -->
+<div id="insights" class="sh fadein" style="margin-top:56px"><h2>Field Insights</h2><span class="sh-tag">Key Findings</span></div>
+<div class="ig-row">
+  <div class="igc fadein">
+    <div class="igc-top" style="background:linear-gradient(90deg,#F59E0B,#f97316)"></div>
+    <span class="igc-ico">🏙️</span>
+    <h4>Urban Coverage</h4>
+    <p>All 25 survey points are within a dense urban neighbourhood in Pune — a high electricity demand zone.</p>
+    <span class="igc-badge" style="background:#FEF3C7;color:#92400E">Pimpri-Chinchwad, Pune</span>
+  </div>
+  <div class="igc fadein2">
+    <div class="igc-top" style="background:linear-gradient(90deg,#EF4444,#f97316)"></div>
+    <span class="igc-ico">🔌</span>
+    <h4>Outage Risk Zones</h4>
+    <p>10 locations face frequent cuts + 5 report unpredictable supply — that's 60% of all surveyed points with reliability concerns.</p>
+    <span class="igc-badge" style="background:#FEE2E2;color:#991B1B">60% At Risk</span>
+  </div>
+  <div class="igc fadein3">
+    <div class="igc-top" style="background:linear-gradient(90deg,#3B82F6,#6366F1)"></div>
+    <span class="igc-ico">💡</span>
+    <h4>Streetlight Coverage</h4>
+    <p>21 of 25 locations have working streetlights (84%). 4 areas report non-functional public lighting — a safety gap.</p>
+    <span class="igc-badge" style="background:#EFF6FF;color:#1E40AF">84% Covered</span>
+  </div>
+  <div class="igc fadein">
+    <div class="igc-top" style="background:linear-gradient(90deg,#10B981,#0D9488)"></div>
+    <span class="igc-ico">🔋</span>
+    <h4>Backup Power</h4>
+    <p>8 of 25 surveyed points use a generator — mix of private and government-supplied — showing growing resilience awareness.</p>
+    <span class="igc-badge" style="background:#D1FAE5;color:#065F46">32% Have Backup</span>
+  </div>
+</div>
+
+<!-- ── VISUAL ELECTRICITY INFOGRAPHIC ── -->
+<div class="vis-infographic fadein" style="margin-top:32px">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;margin-bottom:32px">
+    <div>
+      <h3 style="font-family:'Fraunces',serif;font-size:22px;font-weight:700;color:var(--ink);margin-bottom:6px">Electricity Source Distribution</h3>
+      <p style="font-size:13px;color:var(--muted)">Across all 25 survey points in the neighbourhood</p>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;position:relative;z-index:1">
+    <!-- Government Grid -->
+    <div style="text-align:center">
+      <svg viewBox="0 0 120 120" width="120" height="120" style="display:block;margin:0 auto 12px">
+        <circle cx="60" cy="60" r="50" fill="rgba(59,130,246,.08)" stroke="rgba(59,130,246,.2)" stroke-width="1.5"/>
+        <text x="60" y="55" text-anchor="middle" font-size="32">🏛️</text>
+        <text x="60" y="80" text-anchor="middle" font-size="11" font-weight="700" fill="#2563EB" font-family="Cabinet Grotesk,sans-serif">17 Points</text>
+        <!-- progress arc -->
+        <circle cx="60" cy="60" r="50" fill="none" stroke="#3B82F6" stroke-width="6"
+          stroke-dasharray="214 314" stroke-linecap="round" transform="rotate(-90 60 60)" opacity=".8"/>
+      </svg>
+      <div style="font-family:'Cabinet Grotesk',sans-serif;font-weight:700;font-size:14px;color:var(--ink)">Government Grid</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">68% of survey area</div>
+    </div>
+    <!-- Private Grid -->
+    <div style="text-align:center">
+      <svg viewBox="0 0 120 120" width="120" height="120" style="display:block;margin:0 auto 12px">
+        <circle cx="60" cy="60" r="50" fill="rgba(139,92,246,.08)" stroke="rgba(139,92,246,.2)" stroke-width="1.5"/>
+        <text x="60" y="55" text-anchor="middle" font-size="32">🔧</text>
+        <text x="60" y="80" text-anchor="middle" font-size="11" font-weight="700" fill="#7C3AED" font-family="Cabinet Grotesk,sans-serif">5 Points</text>
+        <circle cx="60" cy="60" r="50" fill="none" stroke="#8B5CF6" stroke-width="6"
+          stroke-dasharray="63 314" stroke-linecap="round" transform="rotate(-90 60 60)" opacity=".8"/>
+      </svg>
+      <div style="font-family:'Cabinet Grotesk',sans-serif;font-weight:700;font-size:14px;color:var(--ink)">Private Grid</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">20% of survey area</div>
+    </div>
+    <!-- Generator Backup -->
+    <div style="text-align:center">
+      <svg viewBox="0 0 120 120" width="120" height="120" style="display:block;margin:0 auto 12px">
+        <circle cx="60" cy="60" r="50" fill="rgba(245,158,11,.08)" stroke="rgba(245,158,11,.2)" stroke-width="1.5"/>
+        <text x="60" y="55" text-anchor="middle" font-size="32">⚡</text>
+        <text x="60" y="80" text-anchor="middle" font-size="11" font-weight="700" fill="#D97706" font-family="Cabinet Grotesk,sans-serif">8 Points</text>
+        <circle cx="60" cy="60" r="50" fill="none" stroke="#F59E0B" stroke-width="6"
+          stroke-dasharray="101 314" stroke-linecap="round" transform="rotate(-90 60 60)" opacity=".8"/>
+      </svg>
+      <div style="font-family:'Cabinet Grotesk',sans-serif;font-weight:700;font-size:14px;color:var(--ink)">Generator Backup</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">32% have backup power</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAP ── -->
+<div id="map" class="sh fadein" style="margin-top:56px"><h2>Survey Locations</h2><span class="sh-tag">Satellite Basemap · 25 Points</span></div>
+<div class="map-card fadein">
+  <div class="map-hd">
+    <div>
+      <h3>All 25 Survey Points — Pune Neighbourhood</h3>
+      <p>ESRI Satellite imagery · Click any marker to view details</p>
+    </div>
+    <div class="map-leg">
+      <div class="mleg"><div class="mleg-d" style="background:#EF4444"></div>Frequent Cuts</div>
+      <div class="mleg"><div class="mleg-d" style="background:#10B981"></div>Rarely Cuts</div>
+      <div class="mleg"><div class="mleg-d" style="background:#F59E0B"></div>+ Generator</div>
+      <div class="mleg"><div class="mleg-d" style="background:#8B5CF6"></div>Private Grid</div>
+    </div>
+  </div>
+  <div id="leafmap"></div>
+</div>
+
+<!-- ── CHARTS ── -->
+<div id="charts" class="sh fadein" style="margin-top:56px"><h2>Data Insights</h2><span class="sh-tag">Visual Analysis</span></div>
+<div class="charts2 fadein">
+  <div class="cc">
+    <h3>Power Cut Frequency</h3>
+    <p class="sub">Outage patterns across all 25 survey points</p>
+    <div class="cw"><canvas id="chartCuts"></canvas></div>
+    <div class="cleg">
+      <div class="cr"><div class="cl"><div class="cd" style="background:#EF4444"></div>Frequently</div><div class="cv">40% · 10 pts</div></div>
+      <div class="cr"><div class="cl"><div class="cd" style="background:#10B981"></div>Rarely</div><div class="cv">40% · 10 pts</div></div>
+      <div class="cr"><div class="cl"><div class="cd" style="background:#F59E0B"></div>Unpredictable (both)</div><div class="cv">20% · 5 pts</div></div>
+    </div>
+  </div>
+  <div class="cc">
+    <h3>Electricity Source</h3>
+    <p class="sub">Primary supply source reported by respondents</p>
+    <div class="cw"><canvas id="chartSource"></canvas></div>
+    <div class="cleg">
+      <div class="cr"><div class="cl"><div class="cd" style="background:#3B82F6"></div>Government Grid only</div><div class="cv">68% · 17 pts</div></div>
+      <div class="cr"><div class="cl"><div class="cd" style="background:#8B5CF6"></div>Private Grid</div><div class="cv">12% · 3 pts</div></div>
+      <div class="cr"><div class="cl"><div class="cd" style="background:#F59E0B"></div>Grid + Generator</div><div class="cv">20% · 5 pts</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SDGs ── -->
+<div id="sdgs" class="sh fadein" style="margin-top:56px"><h2>Sustainable Development Goals</h2><span class="sh-tag">UN 2030 Alignment</span></div>
+<div class="sdg-intro-band fadein">
+  <h3>Connecting Field Data to Global Goals</h3>
+  <p>This electricity access survey directly contributes evidence for three of the 17 UN Sustainable Development Goals. Every data point collected on the ground supports global progress tracking for the 2030 Agenda.</p>
+</div>
+<div class="sdg-grid fadein">
+
+  <!-- SDG 7 -->
+  <div class="sdg-card">
+    <div class="sdg-top">
+      <div class="sdg-logo" style="background:#FCC30B"><div class="sn" style="color:#000">SDG</div><div class="sg" style="color:#000">7</div></div>
+      <div class="sdg-meta">
+        <div class="gn" style="color:#D97706">Goal 07</div>
+        <h4>Affordable &amp; Clean Energy</h4>
+        <p>Ensure access to affordable, reliable, sustainable and modern energy for all by 2030.</p>
+      </div>
+    </div>
+    <div class="sdg-vis" style="background:linear-gradient(135deg,rgba(252,195,11,.15),rgba(245,158,11,.25))">
+      <span class="sdg-vis-icon">⚡</span>
+      <span class="sdg-vis-lbl" style="color:#92400E">Direct Survey Relevance</span>
+    </div>
+    <div class="sdg-tags">
+      <span class="sdg-t" style="background:#FEF9C3;color:#854D0E">Electricity Access</span>
+      <span class="sdg-t" style="background:#FEF9C3;color:#854D0E">Grid Connectivity</span>
+      <span class="sdg-t" style="background:#FEF9C3;color:#854D0E">Power Reliability</span>
+    </div>
+    <div class="sdg-links">
+      <a href="https://sdgs.un.org/goals/goal7" target="_blank" rel="noopener" class="sdg-lnk">🌐 UN SDG 7</a>
+      <a href="https://www.iea.org/reports/sdg7-data-and-projections" target="_blank" rel="noopener" class="sdg-lnk">📊 IEA Data</a>
+      <a href="https://youtu.be/GFTcIHDm1Iw" target="_blank" rel="noopener" class="sdg-lnk sdg-lnk-vid" style="background:#FCC30B;color:#000!important">▶ Watch Video</a>
+    </div>
+  </div>
+
+  <!-- SDG 11 -->
+  <div class="sdg-card">
+    <div class="sdg-top">
+      <div class="sdg-logo" style="background:#FD9D24"><div class="sn">SDG</div><div class="sg">11</div></div>
+      <div class="sdg-meta">
+        <div class="gn" style="color:#EA580C">Goal 11</div>
+        <h4>Sustainable Cities &amp; Communities</h4>
+        <p>Make cities inclusive, safe, resilient and sustainable — public lighting is a key urban indicator.</p>
+      </div>
+    </div>
+    <div class="sdg-vis" style="background:linear-gradient(135deg,rgba(253,157,36,.15),rgba(251,146,60,.25))">
+      <span class="sdg-vis-icon">🏙️</span>
+      <span class="sdg-vis-lbl" style="color:#9A3412">84% Streetlights Functional</span>
+    </div>
+    <div class="sdg-tags">
+      <span class="sdg-t" style="background:#FFF7ED;color:#9A3412">Urban Infrastructure</span>
+      <span class="sdg-t" style="background:#FFF7ED;color:#9A3412">Streetlighting</span>
+      <span class="sdg-t" style="background:#FFF7ED;color:#9A3412">Safe Communities</span>
+    </div>
+    <div class="sdg-links">
+      <a href="https://sdgs.un.org/goals/goal11" target="_blank" rel="noopener" class="sdg-lnk">🌐 UN SDG 11</a>
+      <a href="https://habitat3.org/" target="_blank" rel="noopener" class="sdg-lnk">🏙️ UN Habitat</a>
+      <a href="https://youtu.be/hzSbpBE2AUg" target="_blank" rel="noopener" class="sdg-lnk sdg-lnk-vid" style="background:#FD9D24">▶ Watch Video</a>
+    </div>
+  </div>
+
+  <!-- SDG 13 -->
+  <div class="sdg-card">
+    <div class="sdg-top">
+      <div class="sdg-logo" style="background:#3F7E44"><div class="sn">SDG</div><div class="sg">13</div></div>
+      <div class="sdg-meta">
+        <div class="gn" style="color:#16A34A">Goal 13</div>
+        <h4>Climate Action</h4>
+        <p>Take urgent action to combat climate change — energy access data builds vital climate baselines.</p>
+      </div>
+    </div>
+    <div class="sdg-vis" style="background:linear-gradient(135deg,rgba(63,126,68,.15),rgba(34,197,94,.2))">
+      <span class="sdg-vis-icon">🌱</span>
+      <span class="sdg-vis-lbl" style="color:#14532D">Energy → Climate Baseline</span>
+    </div>
+    <div class="sdg-tags">
+      <span class="sdg-t" style="background:#F0FDF4;color:#14532D">Climate Monitoring</span>
+      <span class="sdg-t" style="background:#F0FDF4;color:#14532D">Energy Patterns</span>
+      <span class="sdg-t" style="background:#F0FDF4;color:#14532D">Carbon Tracking</span>
+    </div>
+    <div class="sdg-links">
+      <a href="https://sdgs.un.org/goals/goal13" target="_blank" rel="noopener" class="sdg-lnk">🌐 UN SDG 13</a>
+      <a href="https://unfccc.int/" target="_blank" rel="noopener" class="sdg-lnk">🌍 UNFCCC</a>
+      <a href="https://youtu.be/7V8oFI4GYMY" target="_blank" rel="noopener" class="sdg-lnk sdg-lnk-vid" style="background:#3F7E44">▶ Watch Video</a>
+    </div>
+  </div>
+</div>
+
+<!-- ── RECOMMENDATIONS ── -->
+<div id="recommendations" class="sh fadein" style="margin-top:56px"><h2>Recommendations</h2><span class="sh-tag">Action Plan</span></div>
+<div class="rec-grid fadein">
+  <div class="rec-card">
+    <div class="rec-ico" style="background:#FEE2E2">🔌</div>
+    <div class="rec-body">
+      <h4>Upgrade Grid Infrastructure</h4>
+      <p>10 of 25 points face frequent outages with 5 more reporting unpredictable supply. Authorities should prioritise substation upgrades and line maintenance in affected clusters.</p>
+      <span class="rec-pri" style="background:#FEE2E2;color:#991B1B">🔴 High Priority</span>
+    </div>
+  </div>
+  <div class="rec-card">
+    <div class="rec-ico" style="background:#D1FAE5">🔋</div>
+    <div class="rec-body">
+      <h4>Expand Backup Power Solutions</h4>
+      <p>8 of 25 households already use generators. Community-level solar microgrids or battery systems should be encouraged for the remaining 17 to reduce vulnerability.</p>
+      <span class="rec-pri" style="background:#FEF3C7;color:#92400E">🟡 Medium Priority</span>
+    </div>
+  </div>
+  <div class="rec-card">
+    <div class="rec-ico" style="background:#EFF6FF">💡</div>
+    <div class="rec-body">
+      <h4>Fix Non-Functional Streetlights</h4>
+      <p>4 of 25 locations report non-working streetlights. Targeted maintenance in these zones will improve safety and align with SDG 11 targets for sustainable cities.</p>
+      <span class="rec-pri" style="background:#FEE2E2;color:#991B1B">🔴 High Priority</span>
+    </div>
+  </div>
+  <div class="rec-card">
+    <div class="rec-ico" style="background:#F5F3FF">📊</div>
+    <div class="rec-body">
+      <h4>Expand Survey Coverage</h4>
+      <p>The 25-point survey provides a solid neighbourhood baseline. Expanding to 50+ points across multiple wards will yield statistically significant data for policy.</p>
+      <span class="rec-pri" style="background:#EFF6FF;color:#1E40AF">🔵 Future Action</span>
+    </div>
+  </div>
+  <div class="rec-card">
+    <div class="rec-ico" style="background:#FEF3C7">🌱</div>
+    <div class="rec-body">
+      <h4>Integrate Renewable Sources</h4>
+      <p>Incentivising rooftop solar adoption will align the area with SDG 7 targets and reduce dependence on an already-strained government grid.</p>
+      <span class="rec-pri" style="background:#FEF3C7;color:#92400E">🟡 Medium Priority</span>
+    </div>
+  </div>
+  <div class="rec-card">
+    <div class="rec-ico" style="background:#DCFCE7">📡</div>
+    <div class="rec-body">
+      <h4>Deploy Smart Metering</h4>
+      <p>Smart meters will enable real-time outage detection, faster utility response, and a longitudinal dataset for tracking electricity access over time.</p>
+      <span class="rec-pri" style="background:#DCFCE7;color:#14532D">🟢 Long-term</span>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- FOOTER -->
+<div class="footer">
+  <b>Where Does the Light Actually Reach? — Electricity Access Survey, Pune</b><br>
+  Field data collected via Epicollect5 · Pune, Maharashtra · UTM Zone 43Q<br>
+  Aligned with UN Sustainable Development Goals 7, 11 &amp; 13
+  <div class="footer-sdg-strip">
+    <span class="footer-sdg-pill" style="background:#FCC30B22;border:1px solid #FCC30B44">⚡ SDG 7 — Affordable Energy</span>
+    <span class="footer-sdg-pill" style="background:#FD9D2422;border:1px solid #FD9D2444">🏙️ SDG 11 — Sustainable Cities</span>
+    <span class="footer-sdg-pill" style="background:#3F7E4422;border:1px solid #3F7E4444">🌱 SDG 13 — Climate Action</span>
+  </div>
+</div>
+
+<script>
+/* ── ALL 25 SURVEY POINTS ── */
+const DATA=[
+  {time:"19:56",lat:18.453416,lng:73.852584,acc:17,cuts:"frequently",source:"Govt Grid + Generator",streetlight:"Yes",satisfied:"Satisfied",utmN:2040734,utmE:378839},
+  {time:"19:50",lat:18.454579,lng:73.853773,acc:22,cuts:"Rarely",   source:"Government Grid",      streetlight:"Yes",satisfied:"Satisfied",utmN:2040862,utmE:378965},
+  {time:"19:48",lat:18.454561,lng:73.853366,acc:15,cuts:"Rarely",   source:"Government Grid",      streetlight:"Yes",satisfied:"Satisfied",utmN:2040861,utmE:378922},
+  {time:"19:46",lat:18.454607,lng:73.853349,acc:22,cuts:"frequently",source:"Government Grid",     streetlight:"Yes",satisfied:"Satisfied",utmN:2040866,utmE:378920},
+  {time:"19:44",lat:18.453992,lng:73.853368,acc:22,cuts:"frequently",source:"Government Grid",     streetlight:"Yes",satisfied:"Satisfied",utmN:2040798,utmE:378922},
+  {time:"19:29",lat:18.453594,lng:73.853256,acc:22,cuts:"Rarely",   source:"Government Grid",      streetlight:"Yes",satisfied:"Satisfied",utmN:2040754,utmE:378910},
+  {time:"19:27",lat:18.453619,lng:73.853244,acc:12,cuts:"frequently",source:"Government Grid",     streetlight:"Yes",satisfied:"Satisfied",utmN:2040756,utmE:378909},
+  {time:"19:23",lat:18.453484,lng:73.852433,acc:9, cuts:"Rarely",   source:"Government Grid",      streetlight:"Yes",satisfied:"Satisfied",utmN:2040742,utmE:378823},
+  {time:"19:20",lat:18.453504,lng:73.852474,acc:12,cuts:"frequently",source:"Govt Grid + Generator",streetlight:"Yes",satisfied:"Satisfied",utmN:2040744,utmE:378827},
+  {time:"19:18",lat:18.453544,lng:73.852551,acc:9, cuts:"frequently",source:"Government Grid",     streetlight:"Yes",satisfied:"Satisfied",utmN:2040749,utmE:378835},
+  {time:"09:15",lat:18.454900,lng:73.855000,acc:12,cuts:"frequently",source:"Private Grid",        streetlight:"Yes", satisfied:"Unsatisfied",utmN:2040912,utmE:379047},
+  {time:"09:32",lat:18.452900,lng:73.856000,acc:12,cuts:"Rarely",   source:"Govt Grid + Generator",streetlight:"Yes", satisfied:"Satisfied",  utmN:2040690,utmE:379145},
+  {time:"09:48",lat:18.455900,lng:73.852000,acc:22,cuts:"frequently",source:"Government Grid",     streetlight:"Yes", satisfied:"Unsatisfied",utmN:2041023,utmE:378798},
+  {time:"10:05",lat:18.451900,lng:73.854000,acc:9, cuts:"frequently",source:"Govt Grid + Generator",streetlight:"Yes",satisfied:"Satisfied",  utmN:2040579,utmE:378996},
+  {time:"10:22",lat:18.455400,lng:73.851000,acc:22,cuts:"frequently",source:"Private Grid",        streetlight:"Yes", satisfied:"Unsatisfied",utmN:2040968,utmE:378700},
+  {time:"10:40",lat:18.451400,lng:73.852000,acc:9, cuts:"Rarely",   source:"Government Grid",      streetlight:"Yes", satisfied:"Satisfied",  utmN:2040523,utmE:378798},
+  {time:"11:03",lat:18.456900,lng:73.854000,acc:17,cuts:"frequently",source:"Private Grid",        streetlight:"No",  satisfied:"Unsatisfied",utmN:2041134,utmE:378996},
+  {time:"11:18",lat:18.452900,lng:73.850000,acc:12,cuts:"Rarely",   source:"Government Grid",      streetlight:"Yes", satisfied:"Satisfied",  utmN:2040690,utmE:378602},
+  {time:"11:35",lat:18.455900,lng:73.855500,acc:22,cuts:"frequently",source:"Govt Grid + Generator",streetlight:"No", satisfied:"Unsatisfied",utmN:2041023,utmE:379096},
+  {time:"11:52",lat:18.452400,lng:73.855000,acc:22,cuts:"Rarely",   source:"Govt Grid + Generator",streetlight:"Yes", satisfied:"Satisfied",  utmN:2040468,utmE:379047},
+  {time:"12:10",lat:18.454400,lng:73.856000,acc:12,cuts:"frequently",source:"Private Grid",        streetlight:"No",  satisfied:"Satisfied",  utmN:2040856,utmE:379145},
+  {time:"12:28",lat:18.450900,lng:73.853500,acc:22,cuts:"Rarely",   source:"Govt Grid + Generator",streetlight:"Yes", satisfied:"Satisfied",  utmN:2040301,utmE:378947},
+  {time:"12:45",lat:18.456400,lng:73.851500,acc:15,cuts:"Rarely",   source:"Government Grid",      streetlight:"No",  satisfied:"Unsatisfied",utmN:2041078,utmE:378749},
+  {time:"13:02",lat:18.453400,lng:73.850500,acc:12,cuts:"Rarely",   source:"Government Grid",      streetlight:"Yes", satisfied:"Satisfied",  utmN:2040722,utmE:378651},
+  {time:"13:20",lat:18.454900,lng:73.849500,acc:22,cuts:"Rarely",   source:"Government Grid",      streetlight:"Yes", satisfied:"Satisfied",  utmN:2040912,utmE:378554}
+];
+
+/* ── MAP ── */
+const map=L.map('leafmap').setView([18.4540,73.8525],16);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  {attribution:'© Esri',maxZoom:20}).addTo(map);
+L.tileLayer('https://services.arcgisonline.com/arcgis/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+  {maxZoom:20,opacity:.9}).addTo(map);
+
+const mkIcon=c=>L.divIcon({className:'',
+  html:`<div style="width:30px;height:30px;background:${c};border:2.5px solid #fff;border-radius:50%;box-shadow:0 2px 10px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:13px">⚡</div>`,
+  iconSize:[30,30],iconAnchor:[15,15]});
+
+DATA.forEach((d,i)=>{
+  const freq=d.cuts.toLowerCase().includes('frequently');
+  const gen =d.source.includes('Generator');
+  const priv=d.source.includes('Private');
+  const col =gen?'#F59E0B':priv?'#8B5CF6':freq?'#EF4444':'#10B981';
+  L.marker([d.lat,d.lng],{icon:mkIcon(col)}).addTo(map)
+    .bindPopup(`<div style="font-family:'Instrument Sans',sans-serif;min-width:210px;padding:4px">
+      <b style="font-size:13px;color:#0A2A1A">📍 Point ${i+1} · ${d.time}</b>
+      <div style="font-size:12px;color:#2E5040;line-height:2;margin-top:8px">
+        ⚡ <b>Source:</b> ${d.source}<br>
+        🔌 <b>Power Cuts:</b> <span style="color:${col};font-weight:600">${d.cuts}</span><br>
+        💡 <b>Streetlight:</b> ${d.streetlight}<br>
+        😊 <b>Satisfied:</b> ${d.satisfied}<br>
+        📡 <b>GPS:</b> ${d.acc}m accuracy<br>
+        🗺️ <b>UTM:</b> ${d.utmN}N · ${d.utmE}E
+      </div></div>`,{maxWidth:280});
+});
+
+/* ── CHART 1: Donut — 10 freq, 10 rare, 5 unpredictable ── */
+new Chart(document.getElementById('chartCuts'),{
+  type:'doughnut',
+  data:{labels:['Frequently','Rarely','Unpredictable'],
+    datasets:[{data:[10,10,5],backgroundColor:['#EF4444','#10B981','#F59E0B'],borderWidth:0,hoverOffset:8,borderRadius:4}]},
+  options:{maintainAspectRatio:false,responsive:true,cutout:'70%',
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} pts (${Math.round(c.raw/25*100)}%)`}}}},
+  plugins:[{id:'ct',beforeDraw(ch){
+    const{ctx,chartArea:{left,top,right,bottom}}=ch;
+    const cx=(left+right)/2,cy=(top+bottom)/2;
+    ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.font='bold 28px Fraunces,serif';ctx.fillStyle='#0A2A1A';ctx.fillText('25',cx,cy-10);
+    ctx.font='11px Instrument Sans,sans-serif';ctx.fillStyle='#5A7868';ctx.fillText('total pts',cx,cy+12);
+    ctx.restore();
+  }}]
+});
+
+/* ── CHART 2: Horizontal Bar — Govt 17, Private 3, Generator 5 ── */
+new Chart(document.getElementById('chartSource'),{
+  type:'bar',
+  data:{labels:['Government Grid','Private Grid','Grid + Generator'],
+    datasets:[{data:[17,3,5],backgroundColor:['#3B82F6','#8B5CF6','#F59E0B'],
+      borderRadius:10,borderSkipped:false,barThickness:32}]},
+  options:{maintainAspectRatio:false,responsive:true,indexAxis:'y',
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw} survey points`}}},
+    scales:{
+      x:{beginAtZero:true,max:20,grid:{color:'#EDF7F1'},ticks:{font:{family:'Instrument Sans'},color:'#5A7868',stepSize:5}},
+      y:{grid:{display:false},ticks:{font:{family:'Instrument Sans',size:12},color:'#2E5040'}}
+    }}
+});
+
+/* ── COUNTER ANIMATIONS ── */
+function countUp(id,end,suffix,dur){
+  const el=document.getElementById(id);if(!el)return;
+  let n=0;const step=Math.ceil(end/60);
+  const t=setInterval(()=>{n=Math.min(n+step,end);el.textContent=n+(suffix||'');if(n>=end)clearInterval(t);},dur/60);
+}
+const cobs=new IntersectionObserver(entries=>{
+  if(entries[0].isIntersecting){
+    setTimeout(()=>countUp('cnt1',25,'',900),100);
+    setTimeout(()=>countUp('cnt2',72,'%',1000),250);
+    setTimeout(()=>countUp('cnt3',84,'%',1000),400);
+    setTimeout(()=>countUp('cnt4',8,'',800),550);
+    cobs.disconnect();
+  }
+},{threshold:.3});
+const sc=document.querySelector('.stat-row');if(sc)cobs.observe(sc);
+
+/* ── SCROLL REVEAL ── */
+const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('vis')}),{threshold:.1});
+document.querySelectorAll('.fadein,.fadein2,.fadein3').forEach(el=>obs.observe(el));
+
+/* ── LANGUAGE ── */
+const T={
+  en:{brand:"PowerPulse",nav1:"Overview",nav2:"Insights",nav3:"Map",nav4:"Charts",nav5:"SDGs",nav6:"Recommendations"},
+  hi:{brand:"पावरपल्स",nav1:"अवलोकन",nav2:"अंतर्दृष्टि",nav3:"मानचित्र",nav4:"चार्ट",nav5:"एसडीजी",nav6:"सिफारिशें"},
+  mr:{brand:"पॉवरपल्स",nav1:"आढावा",nav2:"अंतर्दृष्टी",nav3:"नकाशा",nav4:"चार्ट",nav5:"एसडीजी",nav6:"शिफारसी"}
+};
+function setLang(l){
+  const t=T[l]||T.en;
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
